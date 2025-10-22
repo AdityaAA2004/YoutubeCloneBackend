@@ -1,14 +1,20 @@
 package com.aditya.youtube_clone.controller;
 
+import com.aditya.youtube_clone.dto.VideoDTO;
+import com.aditya.youtube_clone.model.VideoStatus;
 import com.aditya.youtube_clone.service.S3Service;
 import com.aditya.youtube_clone.service.VideoService;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -16,12 +22,14 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 
 @Slf4j
 @SpringBootTest
@@ -48,13 +56,12 @@ public class VideoControllerTest  {
                 "Dummy video content".getBytes()
         );
 
-        doNothing().when(videoService).uploadVideo(any());
     }
 
     @Test
     public void uploadVideoTest_Success() throws Exception {
 
-        doNothing().when(videoService).uploadVideo(any());
+        doReturn("").when(videoService).uploadVideo(mockMultipartFile);
         // Perform the file upload request and verify the response status
         mockMvc.perform(multipart("/api/videos")
                 .file(mockMultipartFile))
@@ -137,9 +144,7 @@ public class VideoControllerTest  {
                 new byte[0]  // Empty byte array
         );
 
-        // DON'T mock videoService - let it run the actual validation
         doCallRealMethod().when(videoService).uploadVideo(any());
-        // The service will check if file is empty and throw the exception
 
         // Perform the request with empty file
         mockMvc.perform(multipart("/api/videos")
@@ -164,5 +169,55 @@ public class VideoControllerTest  {
 
         // Verify the service was called
         verify(videoService).uploadVideo(any());
+    }
+
+    @Test
+    public void updateVideoMetadataTest_Success() throws Exception {
+        // Create the request body
+        JSONObject metadata = new JSONObject();
+        metadata.put("id", "video123");
+        metadata.put("title", "Updated Title");
+        metadata.put("description", "Updated Description");
+        metadata.put("thumbnailUrl", "https://thumbnail.url");
+        metadata.put("videoStatus", "PUBLIC");
+        metadata.put("videoUrl", "https://video.url");
+        metadata.put("tags", new JSONArray(List.of("tag1", "tag2")));
+
+        VideoDTO expectedResponse = new VideoDTO();
+        expectedResponse.setId("video123");
+        expectedResponse.setTitle("Updated Title");
+        expectedResponse.setDescription("Updated Description");
+        expectedResponse.setThumbnailUrl("https://thumbnail.url");
+        expectedResponse.setVideoStatus(VideoStatus.valueOf("PUBLIC"));
+        expectedResponse.setVideoUrl("https://video.url");
+        expectedResponse.setTags(Set.of("tag1", "tag2"));
+
+        // Mock the service
+        when(videoService.editVideo(any(VideoDTO.class))).thenReturn(expectedResponse);
+
+        // Perform PUT request
+        mockMvc.perform(put("/api/videos")
+                        .contentType("application/json")
+                        .content(metadata.toString()))
+                .andExpect(status().isOk())
+                .andExpect(result -> {
+                    String responseBody = result.getResponse().getContentAsString();
+                    JSONObject jsonResponse = new JSONObject(responseBody);
+
+                    assertEquals("video123", jsonResponse.getString("id"));
+                    assertEquals("Updated Title", jsonResponse.getString("title"));
+                    assertEquals("Updated Description", jsonResponse.getString("description"));
+                    assertEquals("https://thumbnail.url", jsonResponse.getString("thumbnailUrl"));
+                    assertEquals("PUBLIC", jsonResponse.getString("videoStatus"));
+                    assertEquals("https://video.url", jsonResponse.getString("videoUrl"));
+
+                    JSONArray tagsArray = jsonResponse.getJSONArray("tags");
+                    assertEquals(2, tagsArray.length());
+                    assertTrue(tagsArray.toString().contains("tag1"));
+                    assertTrue(tagsArray.toString().contains("tag2"));
+                });
+
+
+        verify(videoService).editVideo(any(VideoDTO.class));
     }
 }
