@@ -95,4 +95,36 @@ public class VideoControllerTest  {
         }
     }
 
+    @Test
+    public void uploadVideoTest_GenericError()  {
+        doThrow(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                "An unexpected error occurred while uploading the file."))
+                .when(videoService).uploadVideo(any());
+        try {
+            mockMvc.perform(multipart("/api/videos")
+                            .file(mockMultipartFile))
+                    .andExpect(status().is5xxServerError())
+                    .andExpect(result -> {
+                        // Get resolved exception
+                        Exception resolved = result.getResolvedException();
+                        // Ensure an exception was thrown
+                        assertNotNull(resolved,
+                                "No exception was thrown when one was expected.");
+                        // Ensure exception type is ResponseStatusException
+                        ResponseStatusException responseStatusException = assertThrows(ResponseStatusException.class,
+                                () -> { throw resolved; },
+                                "Expected a ResponseStatusException to be thrown.");
+                        // Verify status code and message
+                        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseStatusException.getStatusCode(),
+                                "Expected HTTP status 500 INTERNAL_SERVER_ERROR.");
+                        assertEquals("An unexpected error occurred while uploading the file.",
+                                responseStatusException.getReason(),
+                                "Exception message does not match.");
+                    });
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+    }
+
 }
