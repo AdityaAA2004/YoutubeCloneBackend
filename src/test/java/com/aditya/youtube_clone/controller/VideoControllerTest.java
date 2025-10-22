@@ -127,4 +127,42 @@ public class VideoControllerTest  {
         }
     }
 
+    @Test
+    public void uploadVideoTest_EmptyFile() throws Exception {
+        // Create an empty file
+        MockMultipartFile emptyFile = new MockMultipartFile(
+                "file",
+                "empty-video.mp4",
+                "video/mp4",
+                new byte[0]  // Empty byte array
+        );
+
+        // DON'T mock videoService - let it run the actual validation
+        doCallRealMethod().when(videoService).uploadVideo(any());
+        // The service will check if file is empty and throw the exception
+
+        // Perform the request with empty file
+        mockMvc.perform(multipart("/api/videos")
+                        .file(emptyFile))
+                .andExpect(status().isBadRequest())
+                .andExpect(result -> {
+                    Exception resolved = result.getResolvedException();
+                    assertNotNull(resolved,
+                            "No exception was thrown when one was expected.");
+
+                    assertInstanceOf(ResponseStatusException.class, resolved,
+                            "Expected a ResponseStatusException to be thrown.");
+
+                    ResponseStatusException responseStatusException = (ResponseStatusException) resolved;
+
+                    assertEquals(HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode(),
+                            "Expected HTTP status 400 BAD_REQUEST.");
+                    assertEquals("Uploaded file is empty",  // Match your actual service message
+                            responseStatusException.getReason(),
+                            "Exception message does not match.");
+                });
+
+        // Verify the service was called
+        verify(videoService).uploadVideo(any());
+    }
 }
