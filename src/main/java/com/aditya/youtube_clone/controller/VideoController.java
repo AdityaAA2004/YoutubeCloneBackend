@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @RestController
@@ -38,6 +39,14 @@ public class VideoController {
     @ResponseStatus(HttpStatus.OK)
     public VideoDTO updateVideoMetadata(@RequestBody VideoDTO videoDTO) {
         log.info("🚀Updating video file from controller");
-        return videoService.editVideo(videoDTO);
+        try {
+            return videoService.editVideo(videoDTO);
+        } catch (IllegalArgumentException e) {
+            log.error("❌Error updating video metadata: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            log.error("❌Unexpected error updating video metadata: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred: " + e.getMessage());
+        }
     }
 }

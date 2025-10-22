@@ -220,4 +220,78 @@ public class VideoControllerTest  {
 
         verify(videoService).editVideo(any(VideoDTO.class));
     }
+
+    @Test
+    public void updateVideoMetadata_Test_VideoNotFound() throws Exception {
+        // Create the request body
+        JSONObject metadata = new JSONObject();
+        metadata.put("id", "nonexistentVideo");
+        metadata.put("title", "Updated Title");
+        metadata.put("description", "Updated Description");
+        metadata.put("thumbnailUrl", "https://thumbnail.url");
+        metadata.put("videoStatus", "PUBLIC");
+        metadata.put("videoUrl", "https://video.url");
+        metadata.put("tags", new JSONArray(List.of("tag1", "tag2")));
+
+        // Mock the service to throw exception
+        when(videoService.editVideo(any(VideoDTO.class)))
+                .thenThrow(new IllegalArgumentException("Cannot find video by ID: nonexistentVideo"));
+
+        // Perform PUT request
+        mockMvc.perform(put("/api/videos")
+                        .contentType("application/json")
+                        .content(metadata.toString()))
+                .andExpect(status().is4xxClientError())
+                .andExpect(result -> {
+                    Exception resolved = result.getResolvedException();
+                    assertNotNull(resolved,
+                            "No exception was thrown when one was expected.");
+
+                    assertInstanceOf(ResponseStatusException.class, resolved,
+                            "Expected an ResponseStatusException to be thrown.");
+                    ResponseStatusException responseStatusException = (ResponseStatusException) resolved;
+                    assertEquals("Cannot find video by ID: nonexistentVideo",
+                            responseStatusException.getReason(),
+                            "Exception message does not match.");
+                });
+
+        verify(videoService).editVideo(any(VideoDTO.class));
+    }
+
+    @Test
+    public void updateVideoMetadata_Test_GenericError() throws Exception {
+        // Create the request body
+        JSONObject metadata = new JSONObject();
+        metadata.put("id", "video123");
+        metadata.put("title", "Updated Title");
+        metadata.put("description", "Updated Description");
+        metadata.put("thumbnailUrl", "https://thumbnail.url");
+        metadata.put("videoStatus", "PUBLIC");
+        metadata.put("videoUrl", "https://video.url");
+        metadata.put("tags", new JSONArray(List.of("tag1", "tag2")));
+
+        // Mock the service to throw generic exception
+        when(videoService.editVideo(any(VideoDTO.class)))
+                .thenThrow(new RuntimeException("Database connection lost"));
+
+        // Perform PUT request
+        mockMvc.perform(put("/api/videos")
+                        .contentType("application/json")
+                        .content(metadata.toString()))
+                .andExpect(status().is5xxServerError())
+                .andExpect(result -> {
+                    Exception resolved = result.getResolvedException();
+                    assertNotNull(resolved,
+                            "No exception was thrown when one was expected.");
+
+                    assertInstanceOf(RuntimeException.class, resolved,
+                            "Expected a RuntimeException to be thrown.");
+                    ResponseStatusException responseStatusException = (ResponseStatusException) resolved;
+                    assertEquals("An unexpected error occurred: Database connection lost",
+                            responseStatusException.getReason(),
+                            "Exception message does not match.");
+                });
+
+        verify(videoService).editVideo(any(VideoDTO.class));
+    }
 }
