@@ -63,7 +63,7 @@ public class VideoControllerTest  {
     }
 
     @Test
-    public void uploadVideoTest_IOError() throws IOException {
+    public void uploadVideoTest_IOError()  {
 
         doThrow(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                 "An I/O Exception occurred while uploading the file."))

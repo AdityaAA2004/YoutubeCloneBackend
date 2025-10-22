@@ -28,6 +28,7 @@ public class S3Service implements FileService {
 
     @Override
     public String uploadFile(MultipartFile file) {
+        log.info("🚀Uploading file to S3 bucket");
         String fileExtension = StringUtils.getFilenameExtension(file.getOriginalFilename());
         String fileUuid = UUID.randomUUID().toString() + "." + fileExtension;
         ObjectMetadata fileMetadata = new ObjectMetadata.Builder().
@@ -40,12 +41,15 @@ public class S3Service implements FileService {
                     .build();
             s3Client.putObject(putObjectRequest,
                     RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+            log.info("✅Successfully uploaded file to S3 bucket");
         } catch (IOException ioException) {
+            log.info("❌Failed to upload file to S3 bucket due to I/O Exception");
             log.error(ioException.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "An I/O Exception occurred while uploading the file.");
         }
         catch (Exception exception) {
+            log.error("❌Failed to upload file to S3 bucket due to unknown exception");
             log.error(exception.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "An unknown error occurred while uploading the file.");
