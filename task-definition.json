@@ -9,7 +9,7 @@
   "containerDefinitions": [
     {
       "name": "youtube-backend-service-container",
-      "image": "YOUR_AWS_ACCOUNT_ID.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:latest",
+      "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:latest",
       "portMappings": [
         {
           "containerPort": 8080,
