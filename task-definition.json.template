@@ -1,5 +1,5 @@
 {
-  "family": "youtube-backend-service-service-hcd9feid",
+  "family": "youtube-backend-service",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "512",

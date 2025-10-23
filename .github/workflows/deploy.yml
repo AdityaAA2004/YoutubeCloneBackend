@@ -72,7 +72,7 @@ jobs:
       - name: Deploy new task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          service: youtube-backend-service
+          service: youtube-backend-service-service-hcd9feid
           cluster: youtube-project-cluster
           task-definition: task-definition.json
           wait-for-service-stability: true
