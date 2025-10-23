@@ -30,15 +30,14 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
-          aws-region: us-east-1
-
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Log in to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and tag Docker image
         env:
-          ECR_REPOSITORY: personal/youtube-clone
+          ECR_REPOSITORY: ${{ secrets.ECR_REPO }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
@@ -46,23 +45,32 @@ jobs:
 
       - name: Push image to ECR
         env:
-          ECR_REPOSITORY: personal/youtube-clone
+          ECR_REPOSITORY: ${{ secrets.ECR_REPO }}
           IMAGE_TAG: ${{ github.sha }}
         run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
 
-      - name: Download task definition
-        run: aws ecs describe-task-definition --task-definition my-task-def --query taskDefinition > task-definition.json
+      - name: Render ECS task definition from template
+        run: |
+          envsubst < task-definition.json.template > task-definition.json
+        env:
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          ECR_REPO: ${{ secrets.ECR_REPO }}
+          IMAGE_TAG: ${{ github.sha }}
+
+      - name: Register ECS task definition
+        run: aws ecs register-task-definition --cli-input-json file://task-definition.json
 
       - name: Update task definition with new image
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: task-definition.json
           container-name: youtube-backend-service-container
-          image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/personal/youtube-clone:${{ github.sha }}
+          image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:${{ github.sha }}
 
       - name: Deploy new task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          service: my-ecs-service
-          cluster: my-ecs-cluster
+          service: youtube-backend-service
+          cluster: youtube-project-cluster
           task-definition: task-definition.json
