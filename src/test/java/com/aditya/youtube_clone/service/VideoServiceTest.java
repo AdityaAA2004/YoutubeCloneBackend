@@ -34,14 +34,10 @@ public class VideoServiceTest {
 
     @Test
     public void uploadVideoTest_Success() throws IOException {
-        // Arrange
         MultipartFile mockMultipartFile = mock(MultipartFile.class);
         when(s3Service.uploadFile(any())).thenReturn("s3-url");
-
-        // Act
+        when(videoRepository.save(any(Video.class))).thenReturn(new Video());
         videoService.uploadVideo(mockMultipartFile);
-
-        // Assert
         verify(s3Service, times(1)).uploadFile(any());
         verify(videoRepository, times(1)).save(any());
     }
