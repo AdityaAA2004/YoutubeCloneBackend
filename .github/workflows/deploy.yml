@@ -70,7 +70,7 @@ jobs:
           image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:${{ github.sha }}
 
       - name: Deploy new task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2.4.0
         with:
           service: youtube-backend-service-service-hcd9feid
           cluster: youtube-project-cluster
