@@ -4,7 +4,6 @@ import com.aditya.youtube_clone.dto.VideoDTO;
 import com.aditya.youtube_clone.model.Video;
 import com.aditya.youtube_clone.model.VideoStatus;
 import com.aditya.youtube_clone.repository.VideoRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

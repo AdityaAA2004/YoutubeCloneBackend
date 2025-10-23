@@ -1,0 +1,60 @@
+name: Deploy Youtube clone backend to ECS
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build Spring Boot app
+        run: mvn clean package
+
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and tag Docker image
+        env:
+          ECR_REPOSITORY: personal/youtube-clone
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Push image to ECR
+        env:
+          ECR_REPOSITORY: personal/youtube-clone
+          IMAGE_TAG: ${{ github.sha }}
+        run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Download task definition
+        run: aws ecs describe-task-definition --task-definition my-task-def --query taskDefinition > task-definition.json
+
+      - name: Update task definition with new image
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: my-springboot-container
+          image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/personal/youtube-clone:${{ github.sha }}
+
+      - name: Deploy new task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          service: my-ecs-service
+          cluster: my-ecs-cluster
+          task-definition: task-definition.json
