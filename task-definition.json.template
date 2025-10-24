@@ -32,15 +32,7 @@
           "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:personal/youtube_clone/aws"
         },
         {
-          "name": "DB_HOST",
-          "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:personal/youtube_clone/mongoDB"
-        },
-        {
-          "name": "DB_USERNAME",
-          "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:personal/youtube_clone/mongoDB"
-        },
-        {
-          "name": "DB_PASSWORD",
+          "name": "DB_URL",
           "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:personal/youtube_clone/mongoDB"
         }
       ],
