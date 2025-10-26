@@ -5,6 +5,8 @@ import com.aditya.youtube_clone.dto.VideoUploadResponseDTO;
 import com.aditya.youtube_clone.service.VideoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -48,5 +50,14 @@ public class VideoController {
             log.error("❌Unexpected error updating video metadata: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/health")
+    @ResponseStatus(HttpStatus.OK)
+    public JSONObject health() throws JSONException {
+        JSONObject healthResponse = new JSONObject();
+        healthResponse.put("status", "OK");
+        healthResponse.put("message", "The Video API is healthy and operational.");
+        return healthResponse;
     }
 }
