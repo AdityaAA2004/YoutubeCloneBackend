@@ -1,6 +1,7 @@
 package com.aditya.youtube_clone.service;
 
 import com.aditya.youtube_clone.dto.VideoDTO;
+import com.aditya.youtube_clone.dto.VideoUploadResponseDTO;
 import com.aditya.youtube_clone.model.Video;
 import com.aditya.youtube_clone.repository.VideoRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,7 @@ public class VideoService {
     private final S3Service s3Service;
     private final VideoRepository videoRepository;
 
-    public String uploadVideo(MultipartFile multipartFile) {
+    public VideoUploadResponseDTO uploadVideo(MultipartFile multipartFile) {
         if (multipartFile.isEmpty()) {
             log.error("❌Failed to upload video: File is empty");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Uploaded file is empty");
@@ -26,21 +27,18 @@ public class VideoService {
         log.info("🚀Uploading video file from service");
         // Upload file to AWS S3
         String videoUrl = s3Service.uploadFile(multipartFile);
-
         Video video = new Video();
         video.setVideoUrl(videoUrl);
         Video createdVideo = videoRepository.save(video);
         log.info("✅Video uploaded successfully");
-        return createdVideo.getId();
+        return new VideoUploadResponseDTO(createdVideo.getId(), createdVideo.getVideoUrl());
     }
 
     public VideoDTO editVideo(VideoDTO videoDTO) {
         // Find the video by videoID
         log.info("🚀Editing video metadata for video ID: {}", videoDTO.getId());
         log.info("🔎Finding video by ID: {}", videoDTO.getId());
-        Video existingVideo = videoRepository.findById(videoDTO.getId()).orElseThrow(() ->
-                new IllegalArgumentException("Cannot find video by ID: " + videoDTO.getId())
-        );
+        Video existingVideo = getVideoById(videoDTO.getId());
         // Map videoDTO fields to video entity
         log.info("🚀Mapping VideoDTO fields to existing Video entity");
         existingVideo.setTitle(videoDTO.getTitle());
@@ -52,5 +50,19 @@ public class VideoService {
         videoRepository.save(existingVideo);
         log.info("✅Video metadata updated successfully for video ID: {}", videoDTO.getId());
         return videoDTO;
+    }
+
+    public String uploadThumbnail(MultipartFile file, String videoId) {
+        Video existingVideo = getVideoById(videoId);
+        String thumbnailUrl = s3Service.uploadFile(file);
+        existingVideo.setThumbnailUrl(thumbnailUrl);
+        videoRepository.save(existingVideo);
+        return thumbnailUrl;
+    }
+
+    Video getVideoById(String videoId) {
+        return videoRepository.findById(videoId).orElseThrow(() ->
+                new IllegalArgumentException("Cannot find video by ID: " + videoId)
+        );
     }
 }

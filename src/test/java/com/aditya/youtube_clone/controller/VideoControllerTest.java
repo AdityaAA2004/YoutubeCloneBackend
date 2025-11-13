@@ -1,20 +1,19 @@
 package com.aditya.youtube_clone.controller;
 
 import com.aditya.youtube_clone.dto.VideoDTO;
+import com.aditya.youtube_clone.dto.VideoUploadResponseDTO;
 import com.aditya.youtube_clone.model.VideoStatus;
 import com.aditya.youtube_clone.service.S3Service;
 import com.aditya.youtube_clone.service.VideoService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -61,11 +60,20 @@ public class VideoControllerTest  {
     @Test
     public void uploadVideoTest_Success() throws Exception {
 
-        doReturn("").when(videoService).uploadVideo(mockMultipartFile);
+        doReturn(new VideoUploadResponseDTO("1","https://example.com")).when(videoService).uploadVideo(mockMultipartFile);
         // Perform the file upload request and verify the response status
         mockMvc.perform(multipart("/api/videos")
                 .file(mockMultipartFile))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andExpect(result -> {
+                    String responseBody = result.getResponse().getContentAsString();
+                    assertNotNull(responseBody, "Response body should not be null");
+                    VideoUploadResponseDTO response = new ObjectMapper().readValue(responseBody, VideoUploadResponseDTO.class);
+                    assertNotNull(response.getVideoId(), "Video ID should not be null");
+                    assertNotNull(response.getVideoUrl(), "Video URL should not be null");
+                    assertEquals("https://example.com", response.getVideoUrl());
+                    assertEquals("1", response.getVideoId());
+                });
         verify(videoService).uploadVideo(any());
     }
 
@@ -293,5 +301,67 @@ public class VideoControllerTest  {
                 });
 
         verify(videoService).editVideo(any(VideoDTO.class));
+    }
+
+    @Test
+    public void healthCheckTest() throws Exception {
+        // Perform GET request to /api/videos/health
+        mockMvc.perform(get("/api/videos/health"))
+                .andExpect(status().isOk())
+                .andExpect(result -> {
+                    String responseBody = result.getResponse().getContentAsString();
+                    JSONObject jsonResponse = new JSONObject(responseBody);
+
+                    assertEquals("OK", jsonResponse.getString("status"));
+                    assertEquals("The Video API is healthy and operational.",
+                            jsonResponse.getString("message"));
+                });
+    }
+
+    @Test
+    public void uploadThumbnailTest_Success() throws Exception {
+        String videoId = "video123";
+
+        doReturn("https://thumbnail.url").when(videoService)
+                .uploadThumbnail(any(), eq(videoId));
+
+        // Perform the file upload request and verify the response status
+        mockMvc.perform(multipart("/api/videos/thumbnail")
+                        .file(mockMultipartFile)
+                        .param("videoId", videoId))
+                .andExpect(status().isCreated());
+        verify(videoService).uploadThumbnail(any(), eq(videoId));
+    }
+
+    @Test
+    public void uploadThumbnailTest_Failure() throws Exception {
+        String videoId = "video123";
+
+        doThrow(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                "An error occurred while uploading the thumbnail."))
+                .when(videoService).uploadThumbnail(any(), eq(videoId));
+
+        // Perform the file upload request and verify the response status
+        mockMvc.perform(multipart("/api/videos/thumbnail")
+                        .file(mockMultipartFile)
+                        .param("videoId", videoId))
+                .andExpect(status().is5xxServerError())
+                .andExpect(result -> {
+                    Exception resolved = result.getResolvedException();
+                    assertNotNull(resolved,
+                            "No exception was thrown when one was expected.");
+
+                    assertInstanceOf(ResponseStatusException.class, resolved,
+                            "Expected a ResponseStatusException to be thrown.");
+
+                    ResponseStatusException responseStatusException = (ResponseStatusException) resolved;
+
+                    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseStatusException.getStatusCode(),
+                            "Expected HTTP status 500 INTERNAL_SERVER_ERROR.");
+                    assertEquals("An error occurred while uploading the thumbnail.",
+                            responseStatusException.getReason(),
+                            "Exception message does not match.");
+                });
+        verify(videoService).uploadThumbnail(any(), eq(videoId));
     }
 }

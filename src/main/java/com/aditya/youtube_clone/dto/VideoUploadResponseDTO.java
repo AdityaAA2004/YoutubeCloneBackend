@@ -9,4 +9,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class VideoUploadResponseDTO {
     private String videoId;
+    private String videoUrl;
 }

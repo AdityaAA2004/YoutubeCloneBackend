@@ -1,6 +1,7 @@
 package com.aditya.youtube_clone.service;
 
 import com.aditya.youtube_clone.dto.VideoDTO;
+import com.aditya.youtube_clone.dto.VideoUploadResponseDTO;
 import com.aditya.youtube_clone.model.Video;
 import com.aditya.youtube_clone.model.VideoStatus;
 import com.aditya.youtube_clone.repository.VideoRepository;
@@ -36,10 +37,14 @@ public class VideoServiceTest {
     public void uploadVideoTest_Success() throws IOException {
         MultipartFile mockMultipartFile = mock(MultipartFile.class);
         when(s3Service.uploadFile(any())).thenReturn("s3-url");
-        when(videoRepository.save(any(Video.class))).thenReturn(new Video());
-        videoService.uploadVideo(mockMultipartFile);
+        Video savedVideo = new Video();
+        savedVideo.setId("1");
+        savedVideo.setVideoUrl("s3-url");
+        when(videoRepository.save(any(Video.class))).thenReturn(savedVideo);
+        VideoUploadResponseDTO uploadedVideo = videoService.uploadVideo(mockMultipartFile);
         verify(s3Service, times(1)).uploadFile(any());
         verify(videoRepository, times(1)).save(any());
+        assertEquals("s3-url", uploadedVideo.getVideoUrl());
     }
 
     @Test
@@ -116,5 +121,49 @@ public class VideoServiceTest {
         verify(videoRepository, times(1)).findById("videoId");
         verify(videoRepository, times(1)).save(any(Video.class));
         assertEquals("DB error", exception.getMessage());
+    }
+
+    @Test
+    public void uploadThumbnailTest_Success() throws IOException {
+        MultipartFile mockMultipartFile = mock(MultipartFile.class);
+        Video video = new Video();
+        video.setId("videoId");
+        when(videoRepository.findById(any())).thenReturn(java.util.Optional.of(video));
+        when(s3Service.uploadFile(any())).thenReturn("s3-thumbnail-url");
+        when(videoRepository.save(any(Video.class))).thenReturn(video);
+        String thumbnailUrl = videoService.uploadThumbnail(mockMultipartFile, "videoId");
+        verify(videoRepository, times(1)).findById("videoId");
+        verify(s3Service, times(1)).uploadFile(any());
+        verify(videoRepository, times(1)).save(any());
+        assertEquals("s3-thumbnail-url", thumbnailUrl);
+    }
+
+    @Test
+    public void uploadThumbnailTest_VideoNotFound() throws IOException {
+        MultipartFile mockMultipartFile = mock(MultipartFile.class);
+        when(videoRepository.findById(any())).thenReturn(java.util.Optional.empty());
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            videoService.uploadThumbnail(mockMultipartFile, "nonExistentVideoId");
+        });
+        verify(videoRepository, times(1)).findById("nonExistentVideoId");
+        verify(s3Service, times(0)).uploadFile(any());
+        verify(videoRepository, times(0)).save(any());
+        assertEquals("Cannot find video by ID: nonExistentVideoId", exception.getMessage());
+    }
+
+    @Test
+    public void uploadThumbnailTest_S3UploadFailure() throws IOException {
+        MultipartFile mockMultipartFile = mock(MultipartFile.class);
+        Video video = new Video();
+        video.setId("videoId");
+        when(videoRepository.findById(any())).thenReturn(java.util.Optional.of(video));
+        when(s3Service.uploadFile(any())).thenThrow(new RuntimeException("Something wrong with S3"));
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            videoService.uploadThumbnail(mockMultipartFile, "videoId");
+        });
+        verify(videoRepository, times(1)).findById("videoId");
+        verify(s3Service, times(1)).uploadFile(any());
+        verify(videoRepository, times(0)).save(any());
+        assertEquals("Something wrong with S3", exception.getMessage());
     }
 }
