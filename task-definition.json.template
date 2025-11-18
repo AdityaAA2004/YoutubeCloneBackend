@@ -25,15 +25,15 @@
       "secrets": [
         {
           "name": "AWS_ACCESS_KEY",
-          "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:personal/youtube_clone/aws:AWS_ACCESS_KEY::"
+          "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:personal/youtube_clone/aws::AWS_ACCESS_KEY::"
         },
         {
           "name": "AWS_SECRET_KEY",
-          "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:personal/youtube_clone/aws:AWS_SECRET_KEY::"
+          "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:personal/youtube_clone/aws::AWS_SECRET_KEY::"
         },
         {
           "name": "DB_URL",
-          "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:personal/youtube_clone/mongoDB:DB_URL::"
+          "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:personal/youtube_clone/mongoDB::DB_URL::"
         }
       ],
       "logConfiguration": {
