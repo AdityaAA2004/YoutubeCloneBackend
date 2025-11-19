@@ -44,7 +44,7 @@ public class VideoController {
 
     @PostMapping("/thumbnail")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<JSONObject> uploadThumbnail(@RequestParam("file") MultipartFile file,
+    public ResponseEntity<String> uploadThumbnail(@RequestParam("file") MultipartFile file,
                                                       @RequestParam("videoId") String videoId) {
         log.info("🚀Uploading thumbnail file from controller");
         String thumbnailUrl = videoService.uploadThumbnail(file, videoId);
@@ -53,7 +53,7 @@ public class VideoController {
             responseObj.put("thumbnailUrl", thumbnailUrl);
             return ResponseEntity.created(new URI(thumbnailUrl)).
                     contentType(MediaType.APPLICATION_JSON).
-                    body(responseObj);
+                    body(responseObj.toString());
         } catch (JSONException e) {
             log.error("❌Error creating JSON response for thumbnail upload: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error creating response JSON: " + e.getMessage());
@@ -80,13 +80,13 @@ public class VideoController {
 
     @GetMapping("/health")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<JSONObject> health() throws JSONException {
+    public ResponseEntity<String> health() throws JSONException {
         log.info("✅ Health check endpoint called");
         try {
             JSONObject healthResponse = new JSONObject();
             healthResponse.put("status", "OK");
             healthResponse.put("message", "The Video API is healthy and operational.");
-            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(healthResponse);
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(healthResponse.toString());
         } catch (JSONException e) {
             log.error("❌Error creating JSON response for health check: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error creating response JSON: " + e.getMessage());
