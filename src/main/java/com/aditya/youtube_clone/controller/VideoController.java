@@ -63,6 +63,7 @@ public class VideoController {
     @GetMapping("/health")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<String> health() throws JSONException {
+        log.info("✅ Health check endpoint called");
         JSONObject healthResponse = new JSONObject();
         healthResponse.put("status", "OK");
         healthResponse.put("message", "The Video API is healthy and operational.");
