@@ -80,7 +80,7 @@ public class VideoController {
 
     @GetMapping("/health")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<String> health() throws JSONException {
+    public ResponseEntity<String> health() {
         log.info("✅ Health check endpoint called");
         try {
             JSONObject healthResponse = new JSONObject();
@@ -90,6 +90,22 @@ public class VideoController {
         } catch (JSONException e) {
             log.error("❌Error creating JSON response for health check: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error creating response JSON: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{videoId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public ResponseEntity<Void> deleteVideo(@PathVariable String videoId) {
+        log.info("🚀Deleting video with ID: {} from controller", videoId);
+        try {
+            videoService.deleteVideoById(videoId);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            log.error("❌Error deleting video: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            log.error("❌Unexpected error deleting video: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred: " + e.getMessage());
         }
     }
 }

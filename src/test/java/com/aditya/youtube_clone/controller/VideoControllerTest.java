@@ -364,4 +364,61 @@ public class VideoControllerTest  {
                 });
         verify(videoService).uploadThumbnail(any(), eq(videoId));
     }
+
+    @Test
+    public void deleteVideoTest_Success() throws Exception {
+        String videoId = "video123";
+
+        doNothing().when(videoService).deleteVideoById(videoId);
+
+        // Perform DELETE request
+        mockMvc.perform(delete("/api/videos/{videoId}", videoId))
+                .andExpect(status().isNoContent());
+
+        verify(videoService).deleteVideoById(videoId);
+    }
+
+    @Test
+    public void deleteVideoTest_VideoNotFound() throws Exception {
+        String videoId = "nonexistentVideo";
+        doThrow(new IllegalArgumentException("Cannot find video by ID: nonexistentVideo"))
+                .when(videoService).deleteVideoById(videoId);
+        // Perform DELETE request
+        mockMvc.perform(delete("/api/videos/{videoId}", videoId))
+                .andExpect(status().is4xxClientError())
+                .andExpect(result -> {
+                    Exception resolved = result.getResolvedException();
+                    assertNotNull(resolved,
+                            "No exception was thrown when one was expected.");
+                    assertInstanceOf(ResponseStatusException.class, resolved,
+                            "Expected a ResponseStatusException to be thrown.");
+                    ResponseStatusException responseStatusException = (ResponseStatusException) resolved;
+                    assertEquals("Cannot find video by ID: nonexistentVideo",
+                            responseStatusException.getReason(),
+                            "Exception message does not match.");
+                });
+        verify(videoService).deleteVideoById(videoId);
+    }
+
+    @Test
+    public void deleteVideoTest_GenericError() throws Exception {
+        String videoId = "video123";
+        doThrow(new RuntimeException("Database connection lost"))
+                .when(videoService).deleteVideoById(videoId);
+        // Perform DELETE request
+        mockMvc.perform(delete("/api/videos/{videoId}", videoId))
+                .andExpect(status().is5xxServerError())
+                .andExpect(result -> {
+                    Exception resolved = result.getResolvedException();
+                    assertNotNull(resolved,
+                            "No exception was thrown when one was expected.");
+                    assertInstanceOf(RuntimeException.class, resolved,
+                            "Expected a RuntimeException to be thrown.");
+                    ResponseStatusException responseStatusException = (ResponseStatusException) resolved;
+                    assertEquals("An unexpected error occurred: Database connection lost",
+                            responseStatusException.getReason(),
+                            "Exception message does not match.");
+                });
+        verify(videoService).deleteVideoById(videoId);
+    }
 }

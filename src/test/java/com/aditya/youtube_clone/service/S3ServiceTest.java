@@ -3,6 +3,7 @@ package com.aditya.youtube_clone.service;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -12,12 +13,16 @@ import org.springframework.web.server.ResponseStatusException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Utilities;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.GetUrlRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.function.Consumer;
 
+import static com.aditya.youtube_clone.constants.Constants.AWS_S3_BUCKET_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
@@ -91,5 +96,31 @@ public class S3ServiceTest {
         });
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatusCode());
         assertEquals("An unknown error occurred while uploading the file.", exception.getReason());
+    }
+
+    @Test
+    void testDeleteFile_Success() {
+        // Arrange
+        String fileUrl = "https://bucket-name.s3.region.amazonaws.com/path/to/file.mp4";
+        String expectedKey = "file.mp4";
+
+        DeleteObjectResponse mockResponse = DeleteObjectResponse.builder().build();
+        when(s3Client.deleteObject(any(Consumer.class))).thenReturn(mockResponse);
+
+        // Act
+        s3Service.deleteFile(fileUrl);
+
+        // Assert
+        ArgumentCaptor<Consumer<DeleteObjectRequest.Builder>> captor =
+                ArgumentCaptor.forClass(Consumer.class);
+        verify(s3Client).deleteObject(captor.capture());
+
+        // Verify the request built by the captured consumer
+        DeleteObjectRequest.Builder builder = DeleteObjectRequest.builder();
+        captor.getValue().accept(builder);
+        DeleteObjectRequest actualRequest = builder.build();
+
+        assertEquals(AWS_S3_BUCKET_NAME, actualRequest.bucket());
+        assertEquals(expectedKey, actualRequest.key());
     }
 }

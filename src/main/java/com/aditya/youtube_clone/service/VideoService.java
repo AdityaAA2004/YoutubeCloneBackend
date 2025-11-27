@@ -65,4 +65,17 @@ public class VideoService {
                 new IllegalArgumentException("Cannot find video by ID: " + videoId)
         );
     }
+
+    public void deleteVideoById(String videoId) {
+        Video existingVideo = getVideoById(videoId);
+        // check for thumbnail and video url and delete from s3
+        if (existingVideo.getVideoUrl() != null) {
+            s3Service.deleteFile(existingVideo.getVideoUrl());
+        }
+        if (existingVideo.getThumbnailUrl() != null) {
+            s3Service.deleteFile(existingVideo.getThumbnailUrl());
+        }
+        videoRepository.delete(existingVideo);
+        log.info("✅Video deleted successfully for video ID: {}", videoId);
+    }
 }

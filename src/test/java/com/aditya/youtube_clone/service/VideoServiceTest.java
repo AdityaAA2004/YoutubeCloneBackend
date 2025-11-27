@@ -166,4 +166,121 @@ public class VideoServiceTest {
         verify(videoRepository, times(0)).save(any());
         assertEquals("Something wrong with S3", exception.getMessage());
     }
+
+    @Test
+    public void deleteVideoByIdTest_Success() {
+        Video video = new Video();
+        video.setId("videoId");
+        video.setVideoUrl("s3-video-url");
+        video.setThumbnailUrl("s3-thumbnail-url");
+        when(videoRepository.findById(any())).thenReturn(java.util.Optional.of(video));
+        doNothing().when(s3Service).deleteFile(any());
+        doNothing().when(videoRepository).delete(any(Video.class));
+        videoService.deleteVideoById("videoId");
+        verify(videoRepository, times(1)).findById("videoId");
+        verify(s3Service, times(1)).deleteFile("s3-video-url");
+        verify(s3Service, times(1)).deleteFile("s3-thumbnail-url");
+        verify(videoRepository, times(1)).delete(video);
+    }
+
+    @Test
+    public void deleteVideoByIdTest_VideoNotFound() {
+        Video video = new Video();
+        when(videoRepository.findById(any())).thenReturn(java.util.Optional.empty());
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            videoService.deleteVideoById("nonExistentVideoId");
+        });
+        verify(videoRepository, times(1)).findById("nonExistentVideoId");
+        verify(s3Service, times(0)).deleteFile(any());
+        verify(videoRepository, times(0)).delete(any(Video.class));
+        assertEquals("Cannot find video by ID: nonExistentVideoId", exception.getMessage());
+    }
+
+    @Test
+    public void deleteVideoByIdTest_S3VideoDeletionFailure() {
+        Video video = new Video();
+        video.setId("videoId");
+        video.setVideoUrl("s3-video-url");
+        video.setThumbnailUrl("s3-thumbnail-url");
+        when(videoRepository.findById(any())).thenReturn(java.util.Optional.of(video));
+        doThrow(new RuntimeException("S3 deletion failed")).when(s3Service).deleteFile("s3-video-url");
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            videoService.deleteVideoById("videoId");
+        });
+        verify(videoRepository, times(1)).findById("videoId");
+        verify(s3Service, times(1)).deleteFile("s3-video-url");
+        verify(s3Service, times(0)).deleteFile("s3-thumbnail-url");
+        verify(videoRepository, times(0)).delete(any(Video.class));
+        assertEquals("S3 deletion failed", exception.getMessage());
+    }
+
+    @Test
+    public void deleteVideoByIdTest_S3ThumbnailDeletionFailure() {
+        Video video = new Video();
+        video.setId("videoId");
+        video.setVideoUrl("s3-video-url");
+        video.setThumbnailUrl("s3-thumbnail-url");
+        when(videoRepository.findById(any())).thenReturn(java.util.Optional.of(video));
+        doNothing().when(s3Service).deleteFile("s3-video-url");
+        doThrow(new RuntimeException("S3 thumbnail deletion failed")).when(s3Service).deleteFile("s3-thumbnail-url");
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            videoService.deleteVideoById("videoId");
+        });
+        verify(videoRepository, times(1)).findById("videoId");
+        verify(s3Service, times(1)).deleteFile("s3-video-url");
+        verify(s3Service, times(1)).deleteFile("s3-thumbnail-url");
+        verify(videoRepository, times(0)).delete(any(Video.class));
+        assertEquals("S3 thumbnail deletion failed", exception.getMessage());
+    }
+
+    @Test
+    public void deleteVideoByIdTest_DBDeletionFailure() {
+        Video video = new Video();
+        video.setId("videoId");
+        video.setVideoUrl("s3-video-url");
+        video.setThumbnailUrl("s3-thumbnail-url");
+        when(videoRepository.findById(any())).thenReturn(java.util.Optional.of(video));
+        doNothing().when(s3Service).deleteFile("s3-video-url");
+        doNothing().when(s3Service).deleteFile("s3-thumbnail-url");
+        doThrow(new RuntimeException("DB deletion failed")).when(videoRepository).delete(any(Video.class));
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            videoService.deleteVideoById("videoId");
+        });
+        verify(videoRepository, times(1)).findById("videoId");
+        verify(s3Service, times(1)).deleteFile("s3-video-url");
+        verify(s3Service, times(1)).deleteFile("s3-thumbnail-url");
+        verify(videoRepository, times(1)).delete(video);
+        assertEquals("DB deletion failed", exception.getMessage());
+    }
+
+    @Test
+    public void getVideoByIdTest_Success() {
+        Video video = new Video();
+        video.setId("videoId");
+        when(videoRepository.findById(any())).thenReturn(java.util.Optional.of(video));
+        Video fetchedVideo = videoService.getVideoById("videoId");
+        verify(videoRepository, times(1)).findById("videoId");
+        assertEquals("videoId", fetchedVideo.getId());
+    }
+
+    @Test
+    public void getVideoByIdTest_VideoNotFound() {
+        Video video = new Video();
+        when(videoRepository.findById(any())).thenReturn(java.util.Optional.empty());
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            videoService.getVideoById("nonExistentVideoId");
+        });
+        verify(videoRepository, times(1)).findById("nonExistentVideoId");
+        assertEquals("Cannot find video by ID: nonExistentVideoId", exception.getMessage());
+    }
+
+    @Test
+    public void getVideoByIdTest_DBFailure() {
+        when(videoRepository.findById(any())).thenThrow(new RuntimeException("DB error"));
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            videoService.getVideoById("videoId");
+        });
+        verify(videoRepository, times(1)).findById("videoId");
+        assertEquals("DB error", exception.getMessage());
+    }
 }

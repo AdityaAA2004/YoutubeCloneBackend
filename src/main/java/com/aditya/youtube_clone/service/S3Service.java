@@ -63,4 +63,18 @@ public class S3Service implements FileService {
                 .bucket(AWS_S3_BUCKET_NAME).key(fileUuid)
                 .build()).toString();
     }
+
+    @Override
+    public void deleteFile(String fileUrl) {
+        log.info("🚀Deleting file from S3 bucket");
+        String fileKey = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+        try {
+            s3Client.deleteObject(builder -> builder.bucket(AWS_S3_BUCKET_NAME).key(fileKey).build());
+            log.info("✅Successfully deleted file from S3 bucket");
+        } catch (Exception exception) {
+            log.error("❌Failed to delete file from S3 bucket: {}", exception.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "An error occurred while deleting the file.");
+        }
+    }
 }
