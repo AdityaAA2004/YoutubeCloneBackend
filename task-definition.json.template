@@ -34,6 +34,10 @@
         {
           "name": "DB_URL",
           "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:personal/youtube_clone/mongoDB-5ASdmN:DB_URL::"
+        },
+        {
+          "name": "JWT_ISSUER_URI",
+          "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:personal/youtube_clone/OAUTH-XYOh7o:JWT_ISSUER_URI::"
         }
       ],
       "logConfiguration": {
