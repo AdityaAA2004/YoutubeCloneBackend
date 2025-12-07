@@ -370,10 +370,9 @@ public class VideoControllerTest  {
         String videoId = "video123";
 
         doNothing().when(videoService).deleteVideoById(videoId);
-
         // Perform DELETE request
         mockMvc.perform(delete("/api/videos/{videoId}", videoId))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
 
         verify(videoService).deleteVideoById(videoId);
     }

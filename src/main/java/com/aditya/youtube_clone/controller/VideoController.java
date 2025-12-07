@@ -94,17 +94,33 @@ public class VideoController {
     }
 
     @DeleteMapping("/{videoId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<Void> deleteVideo(@PathVariable String videoId) {
         log.info("🚀Deleting video with ID: {} from controller", videoId);
         try {
             videoService.deleteVideoById(videoId);
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
             log.error("❌Error deleting video: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (Exception e) {
             log.error("❌Unexpected error deleting video: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{videoId}")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<VideoDTO> getVideoById(@PathVariable String videoId) {
+        log.info("🚀Fetching video with ID: {} from controller", videoId);
+        try {
+            VideoDTO videoDTO = videoService.getVideoDetails(videoId);
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(videoDTO);
+        } catch (IllegalArgumentException e) {
+            log.error("❌Error fetching video: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        } catch (Exception e) {
+            log.error("❌Unexpected error fetching video: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred: " + e.getMessage());
         }
     }

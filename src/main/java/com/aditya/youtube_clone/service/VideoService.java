@@ -78,4 +78,17 @@ public class VideoService {
         videoRepository.delete(existingVideo);
         log.info("✅Video deleted successfully for video ID: {}", videoId);
     }
+
+    public VideoDTO getVideoDetails(String videoId) {
+        Video existingVideo = getVideoById(videoId);
+        VideoDTO videoDTO = new VideoDTO();
+        videoDTO.setId(existingVideo.getId());
+        videoDTO.setTitle(existingVideo.getTitle());
+        videoDTO.setDescription(existingVideo.getDescription());
+        videoDTO.setTags(existingVideo.getTags());
+        videoDTO.setVideoStatus(existingVideo.getVideoStatus());
+        videoDTO.setVideoUrl(existingVideo.getVideoUrl());
+        videoDTO.setThumbnailUrl(existingVideo.getThumbnailUrl());
+        return videoDTO;
+    }
 }
