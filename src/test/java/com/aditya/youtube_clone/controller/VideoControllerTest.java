@@ -1,5 +1,6 @@
 package com.aditya.youtube_clone.controller;
 
+import com.aditya.youtube_clone.config.TestSecurityConfig;
 import com.aditya.youtube_clone.dto.VideoDTO;
 import com.aditya.youtube_clone.dto.VideoUploadResponseDTO;
 import com.aditya.youtube_clone.model.VideoStatus;
@@ -14,13 +15,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -33,6 +36,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Slf4j
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Import(TestSecurityConfig.class)
 public class VideoControllerTest  {
 
     @Autowired
@@ -58,6 +63,7 @@ public class VideoControllerTest  {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void uploadVideoTest_Success() throws Exception {
 
         doReturn(new VideoUploadResponseDTO("1","https://example.com")).when(videoService).uploadVideo(mockMultipartFile);
