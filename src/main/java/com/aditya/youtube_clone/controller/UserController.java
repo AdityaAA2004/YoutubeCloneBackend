@@ -20,7 +20,8 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class UserController {
 
-    private UserRegistrationService userRegistrationService;
+    private final UserRegistrationService userRegistrationService;
+
     @GetMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<String> registerUser(Authentication authentication) {

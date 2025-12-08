@@ -49,7 +49,7 @@ public class UserRegistrationService {
             user.setEmailAddress(userInfo.getEmail());
 
             userRepository.save(user);
-        } catch (Exception e) {
+        }  catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Error registering user: " + e.getMessage());
         }
