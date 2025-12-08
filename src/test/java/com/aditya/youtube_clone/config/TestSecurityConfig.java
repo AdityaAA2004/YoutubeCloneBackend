@@ -17,7 +17,7 @@ public class TestSecurityConfig {
         log.info("testSecurityFilterChain");
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated());
         return http.build();
     }
 }

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
@@ -34,7 +35,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Slf4j
-@SpringBootTest
+@WebMvcTest(VideoController.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(TestSecurityConfig.class)
@@ -65,25 +66,25 @@ public class VideoControllerTest  {
     @Test
     @WithMockUser(username = "testuser")
     public void uploadVideoTest_Success() throws Exception {
+        doReturn(new VideoUploadResponseDTO("1","https://example.com"))
+                .when(videoService).uploadVideo(mockMultipartFile);
 
-        doReturn(new VideoUploadResponseDTO("1","https://example.com")).when(videoService).uploadVideo(mockMultipartFile);
-        // Perform the file upload request and verify the response status
         mockMvc.perform(multipart("/api/videos")
-                .file(mockMultipartFile))
+                        .file(mockMultipartFile))
                 .andExpect(status().isCreated())
                 .andExpect(result -> {
                     String responseBody = result.getResponse().getContentAsString();
-                    assertNotNull(responseBody, "Response body should not be null");
+                    assertNotNull(responseBody);
                     VideoUploadResponseDTO response = new ObjectMapper().readValue(responseBody, VideoUploadResponseDTO.class);
-                    assertNotNull(response.getVideoId(), "Video ID should not be null");
-                    assertNotNull(response.getVideoUrl(), "Video URL should not be null");
                     assertEquals("https://example.com", response.getVideoUrl());
                     assertEquals("1", response.getVideoId());
                 });
+
         verify(videoService).uploadVideo(any());
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void uploadVideoTest_IOError()  {
 
         doThrow(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
@@ -117,6 +118,7 @@ public class VideoControllerTest  {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void uploadVideoTest_GenericError()  {
         doThrow(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                 "An unexpected error occurred while uploading the file."))
@@ -149,6 +151,7 @@ public class VideoControllerTest  {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void uploadVideoTest_EmptyFile() throws Exception {
         // Create an empty file
         MockMultipartFile emptyFile = new MockMultipartFile(
@@ -186,6 +189,7 @@ public class VideoControllerTest  {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void updateVideoMetadataTest_Success() throws Exception {
         // Create the request body
         JSONObject metadata = new JSONObject();
@@ -236,6 +240,7 @@ public class VideoControllerTest  {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void updateVideoMetadata_Test_VideoNotFound() throws Exception {
         // Create the request body
         JSONObject metadata = new JSONObject();
@@ -273,6 +278,7 @@ public class VideoControllerTest  {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void updateVideoMetadata_Test_GenericError() throws Exception {
         // Create the request body
         JSONObject metadata = new JSONObject();
@@ -310,6 +316,7 @@ public class VideoControllerTest  {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void healthCheckTest() throws Exception {
         // Perform GET request to /api/videos/health
         mockMvc.perform(get("/api/videos/health"))
@@ -325,6 +332,7 @@ public class VideoControllerTest  {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void uploadThumbnailTest_Success() throws Exception {
         String videoId = "video123";
 
@@ -340,6 +348,7 @@ public class VideoControllerTest  {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void uploadThumbnailTest_Failure() throws Exception {
         String videoId = "video123";
 
@@ -372,6 +381,7 @@ public class VideoControllerTest  {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void deleteVideoTest_Success() throws Exception {
         String videoId = "video123";
 
@@ -384,6 +394,7 @@ public class VideoControllerTest  {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void deleteVideoTest_VideoNotFound() throws Exception {
         String videoId = "nonexistentVideo";
         doThrow(new IllegalArgumentException("Cannot find video by ID: nonexistentVideo"))
@@ -406,6 +417,7 @@ public class VideoControllerTest  {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     public void deleteVideoTest_GenericError() throws Exception {
         String videoId = "video123";
         doThrow(new RuntimeException("Database connection lost"))
