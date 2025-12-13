@@ -124,4 +124,20 @@ public class VideoController {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred: " + e.getMessage());
         }
     }
+
+    @PostMapping("/{videoId}/like")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<VideoDTO> likeVideo(@PathVariable String videoId) {
+        log.info("🚀Liking video with ID: {} from controller", videoId);
+        try {
+            VideoDTO videoDTO = videoService.likeVideo(videoId);
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(videoDTO);
+        } catch (IllegalArgumentException e) {
+            log.error("❌Error liking video: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        } catch (Exception e) {
+            log.error("❌Unexpected error liking video: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred: " + e.getMessage());
+        }
+    }
 }
