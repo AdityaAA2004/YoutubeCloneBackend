@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -71,8 +72,8 @@ public class VideoServiceTest {
         video.setVideoStatus(VideoStatus.PUBLIC);
         video.setVideoUrl("http://example.com/video");
         video.setThumbnailUrl("http://example.com/thumbnail");
-        video.setLikes(0);
-        video.setDisLikes(0);
+        video.setLikes(new AtomicInteger(0));
+        video.setDisLikes(new AtomicInteger(0));
         when(videoRepository.findById(any())).thenReturn(java.util.Optional.of(video));
         when(videoRepository.save(any(Video.class))).thenReturn(video);
         VideoDTO videoDTO = new VideoDTO();

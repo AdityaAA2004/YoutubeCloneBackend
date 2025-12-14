@@ -3,6 +3,7 @@ package com.aditya.youtube_clone.service;
 import com.aditya.youtube_clone.model.User;
 import com.aditya.youtube_clone.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +13,7 @@ public class UserService {
     private final UserRepository userRepository;
 
     public User getCurrentUser() {
-        Jwt jwtToken = (Jwt) org.springframework.security.core.context.SecurityContextHolder
+        Jwt jwtToken = (Jwt) SecurityContextHolder
                 .getContext()
                 .getAuthentication()
                 .getPrincipal();
