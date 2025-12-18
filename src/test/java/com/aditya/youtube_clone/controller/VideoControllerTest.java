@@ -27,6 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -438,4 +439,80 @@ public class VideoControllerTest  {
                 });
         verify(videoService).deleteVideoById(videoId);
     }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    public void likeVideoTest_Success() throws Exception {
+        String videoId = "video123";
+        VideoDTO videoDTOResponse = new VideoDTO();
+        videoDTOResponse.setId(videoId);
+        videoDTOResponse.setTitle("title");
+        videoDTOResponse.setDescription("description");
+        videoDTOResponse.setVideoUrl("videoUrl");
+        videoDTOResponse.setThumbnailUrl("thumbnailUrl");
+        videoDTOResponse.setTags(ConcurrentHashMap.newKeySet());
+        videoDTOResponse.setLikes(1);
+        videoDTOResponse.setDislikes(0);
+        videoDTOResponse.setVideoStatus(VideoStatus.PUBLIC);
+        doReturn(videoDTOResponse).when(videoService).likeVideo("video123");
+        mockMvc.perform(post("/api/videos/{videoId}/like", videoId))
+                .andExpect(status().isOk()).andExpect(result -> {
+                    String responseBody = result.getResponse().getContentAsString();
+                    JSONObject jsonResponse = new JSONObject(responseBody);
+                    assertEquals("title", jsonResponse.getString("title"));
+                    assertEquals("description", jsonResponse.getString("description"));
+                    assertEquals("videoUrl", jsonResponse.getString("videoUrl"));
+                    assertEquals("thumbnailUrl", jsonResponse.getString("thumbnailUrl"));
+                    assertEquals(1, jsonResponse.getInt("likes"));
+                    assertEquals(0, jsonResponse.getInt("dislikes"));
+                    assertEquals(VideoStatus.PUBLIC.toString(), jsonResponse.get("videoStatus"));
+                });
+        verify(videoService, times(1)).likeVideo("video123");
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    public void likeVideoTest_VideoNotFound() throws Exception {
+        String videoId = "nonexistentVideo";
+        doThrow(new IllegalArgumentException("Cannot find video by ID: nonexistentVideo"))
+                .when(videoService).likeVideo(videoId);
+        mockMvc.perform(post("/api/videos/{videoId}/like", videoId))
+                .andExpect(status().is4xxClientError())
+                .andExpect(result -> {
+                    Exception resolved = result.getResolvedException();
+                    assertNotNull(resolved,
+                            "No exception was thrown when one was expected.");
+                    assertInstanceOf(ResponseStatusException.class, resolved,
+                            "Expected a ResponseStatusException to be thrown.");
+                    ResponseStatusException responseStatusException = (ResponseStatusException) resolved;
+                    assertEquals("Cannot find video by ID: nonexistentVideo",
+                            responseStatusException.getReason(),
+                            "Exception message does not match.");
+                });
+        verify(videoService, times(1)).likeVideo(videoId);
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    public void likeVideoTest_GenericError() throws Exception {
+        String videoId = "video123";
+        doThrow(new RuntimeException("Database connection lost"))
+                .when(videoService).likeVideo(videoId);
+        // Perform DELETE request
+        mockMvc.perform(post("/api/videos/{videoId}/like", videoId))
+                .andExpect(status().is5xxServerError())
+                .andExpect(result -> {
+                    Exception resolved = result.getResolvedException();
+                    assertNotNull(resolved,
+                            "No exception was thrown when one was expected.");
+                    assertInstanceOf(RuntimeException.class, resolved,
+                            "Expected a RuntimeException to be thrown.");
+                    ResponseStatusException responseStatusException = (ResponseStatusException) resolved;
+                    assertEquals("An unexpected error occurred: Database connection lost",
+                            responseStatusException.getReason(),
+                            "Exception message does not match.");
+                });
+        verify(videoService, times(1)).likeVideo(videoId);
+    }
+
 }

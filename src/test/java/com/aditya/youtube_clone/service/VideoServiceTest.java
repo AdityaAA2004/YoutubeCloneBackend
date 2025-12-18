@@ -34,6 +34,9 @@ public class VideoServiceTest {
     @InjectMocks
     private VideoService videoService;
 
+    @Mock
+    private UserService userService;
+
     @Test
     public void uploadVideoTest_Success() throws IOException {
         MultipartFile mockMultipartFile = mock(MultipartFile.class);
@@ -283,5 +286,83 @@ public class VideoServiceTest {
         });
         verify(videoRepository, times(1)).findById("videoId");
         assertEquals("DB error", exception.getMessage());
+    }
+
+    @Test
+    public void likeVideoTest_VideoNotFound() {
+        when(videoRepository.findById(any())).thenReturn(java.util.Optional.empty());
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            videoService.likeVideo("nonExistentVideoId");
+        });
+        verify(videoRepository, times(1)).findById("nonExistentVideoId");
+        assertEquals("Cannot find video by ID: nonExistentVideoId", exception.getMessage());
+        verify(userService, times(0)).checkUserLikedVideo("nonExistentVideoId");
+        verify(userService, times(0)).checkUserDisLikedVideo("nonExistentVideoId");
+    }
+
+    @Test
+    public void likeVideoTest_Success_User_Already_Liked_Video() {
+        Video existingVideo = new Video();
+        // Create data for existing video
+        existingVideo.setId("videoId");
+        existingVideo.setTitle("title");
+        existingVideo.setDescription("description");
+        existingVideo.setVideoUrl("videoUrl");
+        existingVideo.setThumbnailUrl("thumbnailUrl");
+        existingVideo.setLikes(new AtomicInteger(1));
+        existingVideo.setDisLikes(new AtomicInteger(0));
+        when(userService.checkUserLikedVideo("videoId")).thenReturn(true);
+        when(videoRepository.findById(any())).thenReturn(java.util.Optional.of(existingVideo));
+        VideoDTO finalVideo = videoService.likeVideo("videoId");
+        assertEquals(0, finalVideo.getLikes());
+        verify(userService, times(1)).checkUserLikedVideo("videoId");
+        verify(userService, times(1)).removeFromLikedVideos("videoId");
+    }
+
+    @Test
+    public void likeVideoTest_Success_User_Already_Disliked_Video() {
+        Video existingVideo = new Video();
+        // Create data for existing video
+        existingVideo.setId("videoId");
+        existingVideo.setTitle("title");
+        existingVideo.setDescription("description");
+        existingVideo.setVideoUrl("videoUrl");
+        existingVideo.setThumbnailUrl("thumbnailUrl");
+        existingVideo.setLikes(new AtomicInteger(0));
+        existingVideo.setDisLikes(new AtomicInteger(1));
+        when(userService.checkUserLikedVideo("videoId")).thenReturn(false);
+        when(userService.checkUserDisLikedVideo("videoId")).thenReturn(true);
+        when(videoRepository.findById(any())).thenReturn(java.util.Optional.of(existingVideo));
+        VideoDTO finalVideo = videoService.likeVideo("videoId");
+        assertEquals(1, finalVideo.getLikes());
+        assertEquals(0, finalVideo.getDislikes());
+        verify(userService, times(1)).checkUserLikedVideo("videoId");
+        verify(userService, times(1)).checkUserDisLikedVideo("videoId");
+        verify(userService, times(1)).removeFromDisLikedVideos("videoId");
+        verify(userService, times(1)).addToLikedVideos("videoId");
+    }
+
+    @Test
+    public void likeVideoTest_Success_User_Like_First_Time() {
+        Video existingVideo = new Video();
+        // Create data for existing video
+        existingVideo.setId("videoId");
+        existingVideo.setTitle("title");
+        existingVideo.setDescription("description");
+        existingVideo.setVideoUrl("videoUrl");
+        existingVideo.setThumbnailUrl("thumbnailUrl");
+        existingVideo.setLikes(new AtomicInteger(0));
+        existingVideo.setDisLikes(new AtomicInteger(0));
+        when(userService.checkUserLikedVideo("videoId")).thenReturn(false);
+        when(userService.checkUserDisLikedVideo("videoId")).thenReturn(false);
+        when(videoRepository.findById(any())).thenReturn(java.util.Optional.of(existingVideo));
+        VideoDTO finalVideo = videoService.likeVideo("videoId");
+        assertEquals(1, finalVideo.getLikes());
+        assertEquals(0, finalVideo.getDislikes());
+        verify(userService, times(1)).checkUserLikedVideo("videoId");
+        verify(userService, times(1)).checkUserDisLikedVideo("videoId");
+        verify(userService, times(1)).addToLikedVideos("videoId");
+        verify(userService, times(0)).removeFromDisLikedVideos("videoId");
+        verify(userService, times(0)).removeFromLikedVideos("videoId");
     }
 }
