@@ -3,28 +3,25 @@ package com.aditya.youtube_clone.controller;
 import com.aditya.youtube_clone.model.User;
 import com.aditya.youtube_clone.service.UserRegistrationService;
 import lombok.extern.slf4j.Slf4j;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders;
+
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -37,7 +34,7 @@ public class UserControllerTest {
     private WebApplicationContext webApplicationContext;
     private MockMvc mockMvc;
 
-    @MockitoBean
+    @MockBean
     private UserRegistrationService userRegistrationService;
     private User user;
     @BeforeEach

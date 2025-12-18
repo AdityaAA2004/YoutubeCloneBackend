@@ -21,7 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -45,12 +45,12 @@ public class VideoControllerTest  {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean
+    @MockBean
     private VideoService videoService;
 
     private MockMultipartFile mockMultipartFile;
 
-    @MockitoBean
+    @MockBean
     private S3Service s3Service;
 
     @BeforeEach
