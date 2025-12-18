@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -30,6 +32,8 @@ public class VideoService {
         String videoUrl = s3Service.uploadFile(multipartFile);
         Video video = new Video();
         video.setVideoUrl(videoUrl);
+        video.setLikes(new AtomicInteger(0));
+
         Video createdVideo = videoRepository.save(video);
         log.info("✅Video uploaded successfully");
         return new VideoUploadResponseDTO(createdVideo.getId(), createdVideo.getVideoUrl());
@@ -112,6 +116,7 @@ public class VideoService {
             userService.addToLikedVideos(videoId);
             log.info("👍User liked video ID: {}", videoId);
         }
+        videoRepository.save(existingVideo);
         VideoDTO videoDTO = new VideoDTO();
         videoDTO.setId(existingVideo.getId());
         videoDTO.setTitle(existingVideo.getTitle());

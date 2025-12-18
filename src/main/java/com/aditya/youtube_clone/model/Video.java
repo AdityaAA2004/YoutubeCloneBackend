@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,28 +23,24 @@ public class Video {
     private String title;
     private String description;
     private String userId;
-    private AtomicInteger likes; // thread safe implementation for integer
-    private AtomicInteger disLikes; // thread safe implementation for integer
-    private Set<String> tags;
+    private AtomicInteger likes = new AtomicInteger(0);
+    private AtomicInteger disLikes = new AtomicInteger(0);
+    private Set<String> tags = new HashSet<>();
     private String videoUrl;
-    private VideoStatus videoStatus;
-    private Integer viewCount;
+    private VideoStatus videoStatus = VideoStatus.PUBLIC; // or whatever default status you want
+    private Integer viewCount = 0;
     private String thumbnailUrl;
-    private List<Comment> comments;
+    private List<Comment> comments = new ArrayList<>();
 
     public void incrementLikes() {
-        likes.incrementAndGet();
+        likes.getAndIncrement();
     }
 
     public void decrementLikes() {
-        likes.decrementAndGet();
-    }
-
-    public void incrementDisLikes() {
-        disLikes.incrementAndGet();
+        likes.getAndDecrement();
     }
 
     public void decrementDisLikes() {
-        disLikes.decrementAndGet();
+        disLikes.getAndDecrement();
     }
 }

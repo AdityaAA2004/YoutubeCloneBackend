@@ -46,6 +46,7 @@ public class UserRegistrationService {
             user.setFirstName(userInfo.getGivenName());
             user.setLastName(userInfo.getFamilyName());
             user.setFullName(userInfo.getName());
+            user.setSub(userInfo.getSub());
             user.setEmailAddress(userInfo.getEmail());
 
             userRepository.save(user);
